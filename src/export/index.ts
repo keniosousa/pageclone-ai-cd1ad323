@@ -1,1 +1,2 @@
-export { downloadHtmlFile, downloadZipPackage } from "./downloadZip";
+export { downloadHtmlFile, downloadZipPackage, packageClonedPage, slugify } from "./downloadZip";
+export type { PackagedClone, ZipAsset } from "./downloadZip";
