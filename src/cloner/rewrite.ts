@@ -1,6 +1,6 @@
-import { looksLikeCta } from "@/dom/ctas";
-import { absolutize, collapseWhitespace } from "@/utils/url";
 import type { CloneContext } from "./types";
+
+export { applyGlobalAffiliate } from "./affiliate";
 
 function ensureHead(doc: Document): HTMLHeadElement {
   if (doc.head) return doc.head;
@@ -67,42 +67,3 @@ export function applyEditorOverrides(doc: Document, ctx: CloneContext): void {
   }
 }
 
-function setCtaCopy(el: Element, text: string): void {
-  if (el.tagName.toLowerCase() === "input") el.setAttribute("value", text);
-  else el.textContent = text;
-}
-
-/** One href on every CTA-like control (and any link that already was a detected CTA). */
-export function applyGlobalAffiliate(doc: Document, ctx: CloneContext): void {
-  const href = ctx.ctaHref;
-  const known = new Set(ctx.page.ctas.map((c) => c.href).filter(Boolean));
-  const marked: Element[] = [];
-
-  const mark = (el: Element) => {
-    if (el.tagName.toLowerCase() === "a") {
-      el.setAttribute("href", href);
-      el.setAttribute("target", "_blank");
-      el.setAttribute("rel", "noopener noreferrer");
-    }
-    el.setAttribute("data-affiliate-cta", "true");
-    marked.push(el);
-  };
-
-  doc.querySelectorAll("a[href], a[data-affiliate-cta], a.cta").forEach((a) => {
-    const raw = a.getAttribute("href") || "";
-    const abs = raw ? absolutize(ctx.page.url, raw) : "";
-    const already = a.getAttribute("data-affiliate-cta") === "true" || a.classList.contains("cta");
-    if (already || known.has(abs) || looksLikeCta(a)) mark(a);
-  });
-
-  doc.querySelectorAll("button, [role='button'], input[type='submit'], input[type='button']").forEach((el) => {
-    if (!looksLikeCta(el)) return;
-    mark(el);
-  });
-
-  if (!ctx.ctaText || !marked.length) return;
-  const original = collapseWhitespace(ctx.page.ctas[0]?.text).toLowerCase();
-  const preferred =
-    marked.find((el) => collapseWhitespace(el.textContent).toLowerCase() === original) || marked[0];
-  setCtaCopy(preferred, ctx.ctaText);
-}
