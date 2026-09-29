@@ -43,6 +43,37 @@ src/
 
 `fetchAndExtract` chama `parseHtmlFromUrl` e depois `extractFromHtml` com o resultado parseado. O editor e o export usam o mesmo `ExtractedPage`.
 
+## ✅ FASE 3 — Motor de reconstrução (2026-09-28, reforço 2026-09-29)
+
+O editor visual (`src/routes/editor.tsx`) **não mudou de layout**. `src/editor/buildClone.ts` só reexporta o motor.
+
+### Onde vive
+
+```
+src/cloner/
+├── build.ts        → orquestra FULL vs SLIM
+├── full.ts         → HTML limpo + overlay responsivo (fallback semântico)
+├── slim.ts         → só o essencial
+├── rewrite.ts      → afiliado global + overrides do editor
+├── document.ts     → parse/serialize no browser
+├── affiliate.ts    → href único para todos os CTAs
+├── styles.ts       → CSS responsivo (mobile / tablet 768 / desktop 1024)
+├── escape.ts
+└── types.ts
+```
+
+### FULL (2026-09-29)
+
+Usa o `cleanedHtml` da Fase 2 como estrutura completa: injeta `<base>` + viewport, remove scripts, aplica CSS de adaptação (imagens/tabelas fluidas; breakpoints 768 / 1024) e o mesmo link de afiliado em todos os CTAs. Headline, subheadline, título e logo do editor são gravados no markup. Se o HTML limpo for curto ou inválido, cai no rebuild semântico (hero, oferta, benefícios, galeria, vídeos, prova social, CTAs).
+
+### SLIM
+
+Filtra para: headline, oferta, até 5 benefícios, até 3 depoimentos (prova social) e um único botão de CTA (barra fixa no rodapé). Sem logo, galeria, vídeos ou CTAs extras.
+
+### Link de afiliado
+
+`resolveAffiliateHref` define **um** `href`. `applyGlobalAffiliate` reescreve âncoras/botões de CTA nas duas versões (`data-affiliate-cta`). Se o campo do editor estiver preenchido, substitui os destinos; senão usa o primeiro CTA da página.
+
 ## 🐛 Bugs conhecidos / limitações
 
 - Páginas SPA pesadas (React/Vue client-rendered) podem devolver pouco conteúdo, pois só lemos HTML inicial sem rodar JS.
@@ -73,9 +104,13 @@ src/
 │   ├── ctas.ts
 │   └── headlines.ts
 ├── editor/
-│   └── buildClone.ts        → gera HTML FULL/SLIM
+│   └── buildClone.ts        → reexporta o motor (compat)
 ├── cloner/
-│   └── index.ts             → pipeline de clonagem (FASE 3+)
+│   ├── build.ts             → FASE 3: FULL / SLIM
+│   ├── full.ts              → HTML limpo + responsivo
+│   ├── slim.ts
+│   ├── rewrite.ts           → afiliado global no DOM
+│   └── affiliate.ts         → resolve href único
 ├── export/
 │   └── downloadZip.ts       → download HTML e ZIP
 ├── utils/
@@ -92,7 +127,7 @@ src/
 - [ ] Baixar imagens junto do ZIP (assets inline)
 - [x] Detectar e remover scripts de tracking (Hotjar, FB pixel) opcionalmente
 - [ ] Histórico visual de clones na sidebar
-- [ ] FASE 3: pipeline em `src/cloner` (clonagem estruturada além do gerador FULL/SLIM)
+- [x] FASE 3: pipeline em `src/cloner` (FULL responsivo + SLIM essencial + afiliado global)
 
 ### Médio prazo
 - [ ] Autenticação (Lovable Cloud / Supabase)

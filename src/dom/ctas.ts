@@ -11,6 +11,25 @@ const CTA_COPY =
 
 const CTA_CLASS = /btn|button|cta|buy|purchase|checkout|hero-cta|primary/i;
 
+export { CTA_COPY, CTA_CLASS };
+
+export function looksLikeCta(el: Element): boolean {
+  const tag = el.tagName.toLowerCase();
+  const text =
+    tag === "input"
+      ? collapseWhitespace(el.getAttribute("value") || el.getAttribute("aria-label"))
+      : collapseWhitespace(el.textContent || el.getAttribute("aria-label"));
+  if (!text || text.length > 80) return false;
+  const className = el.getAttribute("class") || "";
+  const type = el.getAttribute("type") || "";
+  return (
+    CTA_COPY.test(text) ||
+    CTA_CLASS.test(className) ||
+    type === "submit" ||
+    el.getAttribute("role") === "button"
+  );
+}
+
 export function findCtas(document: Document, baseUrl: string): CtaNode[] {
   const out: CtaNode[] = [];
   const seen = new Set<string>();
@@ -28,16 +47,7 @@ export function findCtas(document: Document, baseUrl: string): CtaNode[] {
 
     const hrefRaw = el.getAttribute("href") || "";
     const href = hrefRaw ? absolutize(baseUrl, hrefRaw) : "";
-    const className = el.getAttribute("class") || "";
-    const type = el.getAttribute("type") || "";
-
-    const looksLikeCta =
-      CTA_COPY.test(text) ||
-      CTA_CLASS.test(className) ||
-      type === "submit" ||
-      el.getAttribute("role") === "button";
-
-    if (!looksLikeCta) return;
+    if (!looksLikeCta(el)) return;
 
     const key = `${text.toLowerCase()}|${href}`;
     if (seen.has(key)) return;

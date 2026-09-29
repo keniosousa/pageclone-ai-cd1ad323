@@ -1,4 +1,4 @@
-export { findCtas, type CtaNode } from "./ctas";
+export { findCtas, looksLikeCta, type CtaNode } from "./ctas";
 export {
   findHeadlines,
   primaryHeadline,
